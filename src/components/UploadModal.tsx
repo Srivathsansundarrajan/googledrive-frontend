@@ -21,8 +21,6 @@ export default function UploadModal({ path, onUploaded }: Props) {
     const [phase, setPhase] = useState<UploadPhase>("idle");
     const [files, setFiles] = useState<File[]>([]);
     const [percent, setPercent] = useState(0);
-    const [uploadedBytes, setUploadedBytes] = useState(0);
-    const [totalBytes, setTotalBytes] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [conflict, setConflict] = useState<ConflictInfo | null>(null);
     const [newFolderName, setNewFolderName] = useState("");

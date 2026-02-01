@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getNotesApi, addNoteApi, deleteNoteApi, updateNoteApi } from "../api/shared";
+import { getNotesApi, addNoteApi, deleteNoteApi} from "../api/shared";
 import soundService from "../services/soundService";
 
 interface Note {
