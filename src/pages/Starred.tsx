@@ -124,7 +124,13 @@ export default function Starred() {
                                             </button>
                                             <div className="flex flex-col items-center text-center">
                                                 <div className="mb-2">
-                                                    <FileThumbnail file={file} size="lg" />
+                                                    <FileThumbnail
+                                                        fileId={file._id}
+                                                        fileName={file.fileName}
+                                                        mimeType={file.mimeType}
+                                                        size="lg"
+                                                    />
+
                                                 </div>
                                                 <span className="font-medium text-sm truncate w-full text-[var(--text-primary)]">
                                                     {file.fileName}

@@ -107,7 +107,7 @@ export default function SharedDriveView() {
 
     // Preview
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [previewType, setPreviewType] = useState<string>("");
+    const [previewType] = useState<string>("");
 
     const loadDrive = async () => {
         if (!id) return;
@@ -178,18 +178,18 @@ export default function SharedDriveView() {
 
     const closeContextMenu = () => setContextMenu(null);
 
-    const getMimeType = (fileName: string, providedMimeType?: string): string => {
-        if (providedMimeType) return providedMimeType;
-        const ext = fileName.split('.').pop()?.toLowerCase() || '';
-        const mimeTypes: Record<string, string> = {
-            'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'webp': 'image/webp',
-            'mp4': 'video/mp4', 'webm': 'video/webm', 'mov': 'video/quicktime',
-            'pdf': 'application/pdf',
-            'mp3': 'audio/mpeg', 'wav': 'audio/wav',
-            'txt': 'text/plain', 'html': 'text/html', 'css': 'text/css', 'js': 'text/javascript'
-        };
-        return mimeTypes[ext] || '';
-    };
+    // const getMimeType = (fileName: string, providedMimeType?: string): string => {
+    //     if (providedMimeType) return providedMimeType;
+    //     const ext = fileName.split('.').pop()?.toLowerCase() || '';
+    //     const mimeTypes: Record<string, string> = {
+    //         'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'webp': 'image/webp',
+    //         'mp4': 'video/mp4', 'webm': 'video/webm', 'mov': 'video/quicktime',
+    //         'pdf': 'application/pdf',
+    //         'mp3': 'audio/mpeg', 'wav': 'audio/wav',
+    //         'txt': 'text/plain', 'html': 'text/html', 'css': 'text/css', 'js': 'text/javascript'
+    //     };
+    //     return mimeTypes[ext] || '';
+    // };
 
     const handlePreview = async (file: FileItem) => {
         try {

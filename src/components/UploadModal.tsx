@@ -123,8 +123,7 @@ export default function UploadModal({ path, onUploaded }: Props) {
         setConflict(null);  // Close conflict dialog immediately
 
         const total = files.reduce((sum, f) => sum + f.size, 0);
-        setTotalBytes(total);
-        setUploadedBytes(0);
+
         setPercent(0);
 
         try {
@@ -170,7 +169,7 @@ export default function UploadModal({ path, onUploaded }: Props) {
                                 fileProgressRef.current.set(file.name, bytes);
                                 const sum = Array.from(fileProgressRef.current.values())
                                     .reduce((a, b) => a + b, 0);
-                                setUploadedBytes(Math.min(sum, total));
+                                
                                 setPercent(Math.round((sum / total) * 100));
                             },
                             controller.signal
