@@ -8,7 +8,11 @@ class SocketService {
     constructor() {
         this.socket = io(URL, {
             autoConnect: false,
-            withCredentials: true
+            withCredentials: true,
+            transports: ["websocket", "polling"], // Try websocket first
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
         });
 
         this.socket.on("connect", () => {
