@@ -20,7 +20,7 @@ export default function ResetPassword() {
 
     try {
       await resetPasswordApi(token, password);
-      navigate("/login");
+      navigate("/");
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to reset password");
     } finally {

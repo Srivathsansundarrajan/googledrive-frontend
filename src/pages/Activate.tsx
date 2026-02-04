@@ -16,7 +16,7 @@ export default function Activate() {
       .then((res) => {
         setStatus("success");
         setMessage(res.data.message);
-        setTimeout(() => navigate("/login"), 3000);
+        setTimeout(() => navigate("/"), 3000);
       })
       .catch((err) => {
         setStatus("error");

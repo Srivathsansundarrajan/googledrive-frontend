@@ -40,7 +40,7 @@ export default function Profile() {
     const handleLogout = () => {
         if (confirm("Are you sure you want to log out?")) {
             localStorage.removeItem("token");
-            window.location.href = "/login";
+            window.location.href = "/";
         }
     };
 
