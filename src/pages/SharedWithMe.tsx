@@ -217,35 +217,7 @@ export default function SharedWithMe() {
                                             />
                                         )}
                                     </div>
-// ... (skip)
-                                    const menuItems: ContextMenuItem[] = [
-                                    {label: "Open", icon: "👁️", onClick: () => handleOpen(item) },
-                                    ];
 
-                                    // Only show download if permission allows
-                                    if (item.permission === "download" || item.permission === "edit") {
-            if (item.resourceType === "file") {
-                                        menuItems.push({ label: "Download", icon: "⬇️", onClick: () => handleDownload(item) });
-            }
-        }
-
-                                    // Add Remove option
-                                    menuItems.push({
-                                        label: "Remove",
-                                    icon: "🗑️", 
-            onClick: async () => {
-                if (window.confirm("Remove this shared item?")) {
-                    try {
-                        const {removeShareApi} = await import("../api/shared");
-                                    await removeShareApi(item._id);
-                        setItems(prev => prev.filter(i => i._id !== item._id));
-                    } catch (err) {
-                                        console.error("Failed to remove share", err);
-                                    alert("Failed to remove shared item");
-                    }
-                }
-            }
-        });
 
                                     <p className="font-medium truncate text-sm text-[var(--text-primary)] text-center" title={item.resource.fileName || item.resource.name}>
                                         {item.resource.fileName || item.resource.name}
