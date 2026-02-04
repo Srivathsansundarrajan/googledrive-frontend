@@ -109,31 +109,22 @@ export default function Dashboard() {
   };
 
   const loadAllNotes = async (fileList: FileItem[], folderList: FolderItem[]) => {
-    const notes: Record<string, StickyNote[]> = {};
+    if (fileList.length === 0 && folderList.length === 0) {
+      setFileNotes({});
+      return;
+    }
+
     try {
-      for (const file of fileList) {
-        try {
-          const res = await getNotesApi("file", file._id);
-          if (res.data.notes?.length > 0) {
-            notes[`file-${file._id}`] = res.data.notes;
-          }
-        } catch {
-          // Ignore errors for individual files
-        }
-      }
-      for (const folder of folderList) {
-        try {
-          const res = await getNotesApi("folder", folder._id);
-          if (res.data.notes?.length > 0) {
-            notes[`folder-${folder._id}`] = res.data.notes;
-          }
-        } catch {
-          // Ignore errors for individual folders
-        }
-      }
-      setFileNotes(notes);
+      const { getBatchNotesApi } = await import("../api/shared");
+      const items = [
+        ...fileList.map(f => ({ resourceType: "file", resourceId: f._id })),
+        ...folderList.map(f => ({ resourceType: "folder", resourceId: f._id }))
+      ];
+
+      const res = await getBatchNotesApi(items);
+      setFileNotes(res.data.notes || {});
     } catch (err) {
-      console.error("Failed to load notes", err);
+      console.error("Failed to load notes batch", err);
     }
   };
 

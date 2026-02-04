@@ -70,6 +70,9 @@ export const addNoteApi = (resourceType: string, resourceId: string, content: st
 export const getNotesApi = (resourceType: string, resourceId: string) =>
     api.get(`/notes/${resourceType}/${resourceId}`);
 
+export const getBatchNotesApi = (items: { resourceType: string; resourceId: string }[]) =>
+    api.post("/notes/batch", { items });
+
 export const updateNoteApi = (id: string, content?: string, color?: string) =>
     api.put(`/notes/${id}`, { content, color });
 
