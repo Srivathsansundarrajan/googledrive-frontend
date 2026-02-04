@@ -186,25 +186,27 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {storage.breakdown && Object.entries(storage.breakdown).map(([category, data]: [string, any]) => (
-                                        <div key={category} className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-lg">
-                                                    {category === "images" && "🖼️"}
-                                                    {category === "videos" && "🎬"}
-                                                    {category === "audio" && "🎵"}
-                                                    {category === "documents" && "📄"}
-                                                    {category === "others" && "📦"}
-                                                </span>
-                                                <span className="capitalize text-[var(--text-primary)]">{category}</span>
+                                    {storage.breakdown && Object.entries(storage.breakdown)
+                                        .filter(([_, data]: [string, any]) => data.size > 0)
+                                        .map(([category, data]: [string, any]) => (
+                                            <div key={category} className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-lg">
+                                                        {category === "images" && "🖼️"}
+                                                        {category === "videos" && "🎬"}
+                                                        {category === "audio" && "🎵"}
+                                                        {category === "documents" && "📄"}
+                                                        {category === "others" && "📦"}
+                                                    </span>
+                                                    <span className="capitalize text-[var(--text-primary)]">{category}</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-medium text-[var(--text-primary)]">{formatBytes(data.size)}</p>
+                                                    {/* Optional: Show count if desired */}
+                                                    {/* <p className="text-xs text-[var(--text-muted)]">{data.count} files</p> */}
+                                                </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="font-medium text-[var(--text-primary)]">{formatBytes(data.size)}</p>
-                                                {/* Optional: Show count if desired */}
-                                                {/* <p className="text-xs text-[var(--text-muted)]">{data.count} files</p> */}
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
                                 </div>
                             )}
                         </div>

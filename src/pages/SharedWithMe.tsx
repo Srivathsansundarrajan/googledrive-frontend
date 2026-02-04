@@ -94,23 +94,18 @@ export default function SharedWithMe() {
     };
 
     const handleDownload = async (item: ShareItem) => {
-        if (item.resourceType !== "file") return;
-        if (item.permission !== "download" && item.permission !== "edit") {
+        if (item.permission !== "download" && item.permission !== "edit" && item.permission !== "view") {
             alert("You don't have permission to download this file.");
             return;
         }
-        try {
-            const res = await api.get(`/share/access/${item.accessToken}`);
-            if (res.data.previewUrl) {
-                const link = document.createElement("a");
-                link.href = res.data.previewUrl;
-                link.download = item.resource.fileName || "download";
-                link.click();
-            }
-        } catch (err) {
-            console.error("Download error:", err);
-            alert("Failed to download file");
-        }
+
+        // Use the new universal download endpoint which handles both keys and folders (zip)
+        const downloadUrl = `${api.defaults.baseURL}/share/download/${item.accessToken}`;
+
+        // Trigger download
+        // For files it redirects to S3 (browser handles it, might open in new tab or download)
+        // For folders it streams ZIP
+        window.open(downloadUrl, "_blank");
     };
 
     const handleOpen = (item: ShareItem) => {
@@ -122,6 +117,8 @@ export default function SharedWithMe() {
         }
     };
 
+    const [showDetails, setShowDetails] = useState<ShareItem | null>(null);
+
     const getContextMenuItems = (): ContextMenuItem[] => {
         if (!contextMenu) return [];
         const item = contextMenu.item;
@@ -130,11 +127,9 @@ export default function SharedWithMe() {
             { label: "Open", icon: "👁️", onClick: () => handleOpen(item) },
         ];
 
-        // Only show download if permission allows
+        // Only show download if permission allows (Download or Edit)
         if (item.permission === "download" || item.permission === "edit") {
-            if (item.resourceType === "file") {
-                menuItems.push({ label: "Download", icon: "⬇️", onClick: () => handleDownload(item) });
-            }
+            menuItems.push({ label: "Download", icon: "⬇️", onClick: () => handleDownload(item) });
         }
 
         // Add Remove option
@@ -158,7 +153,7 @@ export default function SharedWithMe() {
         menuItems.push({
             label: "View Details",
             icon: "ℹ️",
-            onClick: () => alert(`Shared by: ${item.sharedBy}\nPermission: ${item.permission}\nShared on: ${new Date(item.createdAt).toLocaleString()}`)
+            onClick: () => setShowDetails(item)
         });
 
         return menuItems;
@@ -254,6 +249,55 @@ export default function SharedWithMe() {
                         items={getContextMenuItems()}
                         onClose={closeContextMenu}
                     />
+                )}
+
+                {/* Details Modal */}
+                {showDetails && (
+                    <div className="modal-overlay" onClick={() => setShowDetails(null)}>
+                        <div className="modal-content max-w-sm animate-fadeIn" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="font-semibold text-lg text-[var(--text-primary)]">Shared Details</h3>
+                                <button onClick={() => setShowDetails(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">✕</button>
+                            </div>
+                            <div className="space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold">
+                                        {(typeof showDetails.sharedBy === 'string' ? showDetails.sharedBy : showDetails.sharedBy.email).charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-[var(--text-muted)]">Shared by</p>
+                                        <p className="font-medium text-[var(--text-primary)]">
+                                            {typeof showDetails.sharedBy === 'string'
+                                                ? showDetails.sharedBy
+                                                : (showDetails.sharedBy.firstName
+                                                    ? `${showDetails.sharedBy.firstName} ${showDetails.sharedBy.lastName || ''}`
+                                                    : showDetails.sharedBy.email)}
+                                        </p>
+                                        <p className="text-xs text-[var(--text-muted)]">
+                                            {typeof showDetails.sharedBy !== 'string' && showDetails.sharedBy.email}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="border-t border-[var(--border)] pt-3 flex justify-between">
+                                    <div>
+                                        <p className="text-sm text-[var(--text-muted)]">Permission</p>
+                                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${getPermissionBadge(showDetails.permission)}`}>
+                                            {showDetails.permission}
+                                        </span>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm text-[var(--text-muted)]">Shared on</p>
+                                        <p className="text-sm text-[var(--text-primary)]">
+                                            {new Date(showDetails.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-6 flex justify-end">
+                                <button onClick={() => setShowDetails(null)} className="btn btn-primary">Close</button>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {/* Preview Modal */}

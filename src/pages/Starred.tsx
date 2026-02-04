@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { getStarredApi, toggleStarredApi } from "../api/shared";
 import { FolderIcon } from "../components/FileIcon";
 import FileThumbnail from "../components/FileThumbnail";
 import type { FileItem, FolderItem } from "../types/drive";
+import api from "../api/axios";
 
 const formatSize = (bytes?: number): string => {
     if (!bytes) return "File";
@@ -13,6 +15,7 @@ const formatSize = (bytes?: number): string => {
 };
 
 export default function Starred() {
+    const navigate = useNavigate();
     const [files, setFiles] = useState<FileItem[]>([]);
     const [folders, setFolders] = useState<FolderItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -43,6 +46,34 @@ export default function Starred() {
         } catch (err) {
             console.error("Failed to unstar:", err);
         }
+    };
+
+    const handleDownloadFolder = (folder: FolderItem) => {
+        try {
+            const downloadUrl = `${api.defaults.baseURL}/folders/${folder._id}/download`;
+            window.open(downloadUrl, "_blank");
+        } catch (err) {
+            console.error("Download folder error:", err);
+        }
+    };
+
+    const handleDownloadFile = async (file: FileItem) => {
+        try {
+            const res = await api.get(`/files/download/${file._id}`);
+            const link = document.createElement("a");
+            link.href = res.data.downloadUrl;
+            link.download = file.fileName;
+            link.click();
+        } catch (err) {
+            console.error("Download error:", err);
+        }
+    };
+
+    const handleOpenFolder = (folder: FolderItem) => {
+        // Navigate to dashboard with path
+        // We need to know parent path. FolderItem usually has it.
+        const fullPath = folder.parentPath === "/" ? `/${folder.name}` : `${folder.parentPath}/${folder.name}`;
+        navigate(`/dashboard?path=${encodeURIComponent(fullPath)}`);
     };
 
     const isEmpty = files.length === 0 && folders.length === 0;
@@ -79,15 +110,25 @@ export default function Starred() {
                                     {folders.map((folder) => (
                                         <div
                                             key={folder._id}
-                                            className="file-card relative group"
+                                            className="file-card relative group cursor-pointer"
+                                            onClick={() => handleOpenFolder(folder)}
                                         >
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleUnstar("folder", folder._id); }}
-                                                className="absolute top-2 right-2 text-yellow-500 hover:text-yellow-600 z-10"
-                                                title="Unstar"
-                                            >
-                                                ⭐
-                                            </button>
+                                            <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDownloadFolder(folder); }}
+                                                    className="p-1 rounded bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm"
+                                                    title="Download"
+                                                >
+                                                    ⬇️
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleUnstar("folder", folder._id); }}
+                                                    className="p-1 rounded bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-yellow-500 hover:text-yellow-600 shadow-sm"
+                                                    title="Unstar"
+                                                >
+                                                    ⭐
+                                                </button>
+                                            </div>
                                             <div className="flex flex-col items-center text-center">
                                                 <div className="mb-2">
                                                     <FolderIcon size="lg" />
@@ -115,13 +156,22 @@ export default function Starred() {
                                             key={file._id}
                                             className="file-card relative group"
                                         >
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); handleUnstar("file", file._id); }}
-                                                className="absolute top-2 right-2 text-yellow-500 hover:text-yellow-600 z-10"
-                                                title="Unstar"
-                                            >
-                                                ⭐
-                                            </button>
+                                            <div className="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDownloadFile(file); }}
+                                                    className="p-1 rounded bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm"
+                                                    title="Download"
+                                                >
+                                                    ⬇️
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleUnstar("file", file._id); }}
+                                                    className="p-1 rounded bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-yellow-500 hover:text-yellow-600 shadow-sm"
+                                                    title="Unstar"
+                                                >
+                                                    ⭐
+                                                </button>
+                                            </div>
                                             <div className="flex flex-col items-center text-center">
                                                 <div className="mb-2">
                                                     <FileThumbnail
@@ -147,6 +197,7 @@ export default function Starred() {
                     </div>
                 )}
             </div>
-        </Layout>
+
+        </Layout >
     );
 }

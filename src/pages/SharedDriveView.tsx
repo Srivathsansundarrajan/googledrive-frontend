@@ -173,35 +173,44 @@ export default function SharedDriveView() {
     useEffect(() => { if (showChat) loadChat(); }, [showChat]);
 
     // Socket connection for real-time chat
+    // Socket connection and Room management
     useEffect(() => {
         if (!id) return;
-
         socketService.connect();
         socketService.joinDrive(id);
+        console.log("Joined drive room:", id);
 
+        return () => {
+            socketService.leaveDrive(id);
+            console.log("Left drive room:", id);
+        };
+    }, [id]);
+
+    // Message Listener
+    useEffect(() => {
         const handleNewMessage = (msg: ChatMessage) => {
+            console.log("Received new message:", msg);
             // Only add if it's from another user, or if we want to ensure consistency (usually sender adds optimistically or waits for ack)
             // Assuming msg includes all fields
-            setMessages(prev => [...prev, msg]);
+            setMessages(prev => {
+                // Prevent duplicates if backend emits to sender too
+                if (prev.some(m => m._id === msg._id)) return prev;
+                return [...prev, msg];
+            });
 
             if (showChat) {
                 setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
             } else {
                 setUnreadCount(prev => prev + 1);
-                // Optionally play sound
-                // soundService.playNotification(); 
             }
         };
-
-
 
         socketService.on("receive_message", handleNewMessage);
 
         return () => {
-            socketService.off("receive_message"); // Note: off() in service usually removes all listeners for event, or we need to pass handler if supported
-            socketService.leaveDrive(id);
+            socketService.off("receive_message");
         };
-    }, [id, showChat]); // Re-bind listener if showChat changes to know whether to increment unread
+    }, [showChat]); // Re-bind when showChat changes to capture its new value
 
     const handleContextMenu = (e: React.MouseEvent, type: "empty" | "file" | "folder", target?: FileItem | FolderItem) => {
         e.preventDefault();
@@ -253,6 +262,16 @@ export default function SharedDriveView() {
         }
     };
 
+    const handleDownloadFolder = async (folder: FolderItem) => {
+        try {
+            const downloadUrl = `${api.defaults.baseURL}/shared-drives/${id}/folders/${folder._id}/download`;
+            window.open(downloadUrl, "_blank");
+        } catch (err) {
+            console.error("Download folder error:", err);
+            alert("Failed to download folder");
+        }
+    };
+
     const getContextMenuItems = (): ContextMenuItem[] => {
         if (!contextMenu) return [];
         if (contextMenu.type === "empty") {
@@ -262,6 +281,7 @@ export default function SharedDriveView() {
             const folder = contextMenu.target as FolderItem;
             return [
                 { label: "Open", icon: "📂", onClick: () => setPath(path === "/" ? `/${folder.name}` : `${path}/${folder.name}`) },
+                { label: "Download", icon: "⬇️", onClick: () => handleDownloadFolder(folder) },
                 { label: "Notes", icon: "📝", onClick: () => setNotesItem({ type: "folder", id: folder._id }) },
             ];
         }

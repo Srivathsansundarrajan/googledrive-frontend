@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { listFilesApi, createFolderApi, deleteFileApi, deleteFolderApi, previewFileApi, downloadFileApi, moveFileApi, moveFolderApi } from "../api/files";
+import api from "../api/axios";
 import type { FileItem, FolderItem } from "../types/drive";
 import Breadcrumb from "../components/Breadcrumb";
 import UploadModal from "../components/UploadModal";
@@ -192,6 +193,19 @@ export default function Dashboard() {
     }
   };
 
+
+
+  const handleDownloadFolder = (folder: FolderItem) => {
+    try {
+      // Direct download link for folder zip
+      const downloadUrl = `${api.defaults.baseURL}/folders/${folder._id}/download`;
+      // Open in new tab/trigger download
+      window.open(downloadUrl, "_blank");
+    } catch (err) {
+      console.error("Download folder error:", err);
+    }
+  };
+
   const handleDeleteFolder = async (folder: FolderItem) => {
     if (!confirm(`Delete folder "${folder.name}" and all its contents?`)) return;
     try {
@@ -281,6 +295,7 @@ export default function Dashboard() {
       const isStarred = (folder as any).isStarred;
       return [
         { label: "Open", icon: "📂", onClick: () => updatePath(path === "/" ? `/${folder.name}` : `${path}/${folder.name}`) },
+        { label: "Download", icon: "⬇️", onClick: () => handleDownloadFolder(folder) },
         { label: isStarred ? "Remove from Favourites" : "Favourites", icon: "⭐", onClick: async () => { await toggleStarredApi("folder", folder._id); refresh(); } },
         { label: "Move to", icon: "➡️", onClick: () => setMoveToFolderItem({ type: "folder", id: folder._id, name: folder.name }) },
         { label: "Notes", icon: "📝", onClick: () => setNotesItem({ type: "folder", id: folder._id }) },
