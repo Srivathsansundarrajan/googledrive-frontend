@@ -6,13 +6,18 @@ class SocketService {
     private socket: Socket;
 
     constructor() {
-        this.socket = io(URL, {
+        // Strip path from URL to avoid namespace issues (e.g. /api)
+        const urlObj = new URL(URL);
+        const baseUrl = urlObj.origin;
+
+        this.socket = io(baseUrl, {
             autoConnect: false,
             withCredentials: true,
             transports: ["websocket", "polling"], // Try websocket first
             reconnection: true,
             reconnectionAttempts: 5,
             reconnectionDelay: 1000,
+            path: "/socket.io/" // Standard path
         });
 
         this.socket.on("connect", () => {

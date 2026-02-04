@@ -30,6 +30,8 @@ export default function Layout({ children }: LayoutProps) {
     const [showResults, setShowResults] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
 
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     // Swipe gesture navigation
     const touchStartX = useRef<number>(0);
     const touchEndX = useRef<number>(0);
@@ -85,6 +87,8 @@ export default function Layout({ children }: LayoutProps) {
 
             // Swipe right = go back
             if (distance > minSwipeDistance) {
+                // If sidebar is closed, maybe go back. 
+                // Careful not to conflict with sidebar swipe logic if we add it
                 window.history.back();
             }
             // Swipe left = go forward
@@ -129,7 +133,11 @@ export default function Layout({ children }: LayoutProps) {
 
     return (
         <div className="flex min-h-screen bg-[var(--bg-primary)]">
-            <Sidebar userEmail={userEmail} />
+            <Sidebar
+                userEmail={userEmail}
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+            />
 
             {/* Main Content */}
             <main ref={mainRef} className="flex-1 md:ml-64 transition-all duration-300">
@@ -139,7 +147,14 @@ export default function Layout({ children }: LayoutProps) {
                         <div className="relative flex items-center gap-4">
                             {/* Mobile Menu Button - visible only on small screens */}
                             <div className="md:hidden">
-                                {/* We need a way to toggle sidebar, but for now let's just ensure layout doesn't break */}
+                                <button
+                                    onClick={() => setIsSidebarOpen(true)}
+                                    className="p-2 -ml-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] rounded-lg"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                                </button>
                             </div>
 
                             <div className="search-bar w-full md:w-96">
