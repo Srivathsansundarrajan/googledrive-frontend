@@ -25,6 +25,8 @@ export default function Sidebar({ userEmail }: SidebarProps) {
     const [storage, setStorage] = useState<StorageInfo | null>(null);
     const [showStorageDetail, setShowStorageDetail] = useState(false);
 
+    const [loadingBreakdown, setLoadingBreakdown] = useState(false);
+
     useEffect(() => {
         const fetchStorage = async () => {
             try {
@@ -36,6 +38,25 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         };
         fetchStorage();
     }, []);
+
+    // Fetch full breakdown when modal opens
+    useEffect(() => {
+        if (showStorageDetail && storage && (!storage.breakdown || storage.breakdown.images.size === 0)) {
+            const fetchBreakdown = async () => {
+                try {
+                    setLoadingBreakdown(true);
+                    const res = await api.get("/storage?breakdown=true");
+                    // Use the new detailed data
+                    setStorage(res.data);
+                } catch (err) {
+                    console.error("Failed to fetch storage breakdown", err);
+                } finally {
+                    setLoadingBreakdown(false);
+                }
+            };
+            fetchBreakdown();
+        }
+    }, [showStorageDetail]);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -159,25 +180,33 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                                 <p className="text-sm text-[var(--text-secondary)]">used of {storage.limitFormatted}</p>
                             </div>
 
-                            <div className="space-y-3">
-                                {storage.breakdown && Object.entries(storage.breakdown).map(([category, data]: [string, any]) => (
-                                    <div key={category} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-lg">
-                                                {category === "images" && "🖼️"}
-                                                {category === "videos" && "🎬"}
-                                                {category === "audio" && "🎵"}
-                                                {category === "documents" && "📄"}
-                                                {category === "others" && "📦"}
-                                            </span>
-                                            <span className="capitalize text-[var(--text-primary)]">{category}</span>
+                            {loadingBreakdown ? (
+                                <div className="flex justify-center py-8">
+                                    <div className="spinner w-8 h-8"></div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {storage.breakdown && Object.entries(storage.breakdown).map(([category, data]: [string, any]) => (
+                                        <div key={category} className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-lg">
+                                                    {category === "images" && "🖼️"}
+                                                    {category === "videos" && "🎬"}
+                                                    {category === "audio" && "🎵"}
+                                                    {category === "documents" && "📄"}
+                                                    {category === "others" && "📦"}
+                                                </span>
+                                                <span className="capitalize text-[var(--text-primary)]">{category}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-medium text-[var(--text-primary)]">{formatBytes(data.size)}</p>
+                                                {/* Optional: Show count if desired */}
+                                                {/* <p className="text-xs text-[var(--text-muted)]">{data.count} files</p> */}
+                                            </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-medium text-[var(--text-primary)]">{formatBytes(data.size)}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
