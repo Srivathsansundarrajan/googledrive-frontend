@@ -6,6 +6,7 @@ import type { ContextMenuItem } from "../components/ContextMenu";
 import StickyNotePanel from "../components/StickyNotePanel";
 import { FolderIcon } from "../components/FileIcon";
 import FileThumbnail from "../components/FileThumbnail";
+import UploadModal from "../components/UploadModal";
 import {
     getSharedDriveApi,
     getSharedDriveContentsApi,
@@ -96,10 +97,6 @@ export default function SharedDriveView() {
     const [newFolderName, setNewFolderName] = useState("");
     const [creatingFolder, setCreatingFolder] = useState(false);
 
-    // File upload with progress
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [uploading, setUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
 
     // Sticky notes
     const [notesItem, setNotesItem] = useState<{ type: "file" | "folder"; id: string } | null>(null);
@@ -254,35 +251,7 @@ export default function SharedDriveView() {
         }
     };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !id) return;
-        setUploading(true);
-        setUploadProgress(0);
 
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("path", path);
-
-            await api.post(`/shared-drives/${id}/upload`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-                onUploadProgress: (progressEvent) => {
-                    const percent = progressEvent.total
-                        ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
-                        : 0;
-                    setUploadProgress(percent);
-                }
-            });
-            loadContents();
-        } catch (err: any) {
-            alert(err.response?.data?.message || "Failed to upload file");
-        } finally {
-            setUploading(false);
-            setUploadProgress(0);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-        }
-    };
 
     const handleCreateFolder = async () => {
         if (!newFolderName.trim() || !id) return;
@@ -371,19 +340,21 @@ export default function SharedDriveView() {
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                            <button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="btn btn-primary">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                </svg>
-                                {uploading ? `${uploadProgress}%` : "Upload"}
-                            </button>
-                            <button onClick={() => setShowCreateFolder(true)} className="btn btn-primary">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                                </svg>
-                                New Folder
-                            </button>
+                            <UploadModal
+                                path={path}
+                                onUploaded={loadContents}
+                                onCreateFolder={() => setShowCreateFolder(true)}
+                                uploadApi={(formData, onProgress, signal) =>
+                                    api.post(`/shared-drives/${id}/upload`, formData, {
+                                        headers: { "Content-Type": "multipart/form-data" },
+                                        onUploadProgress: (e) => {
+                                            if (e.total) onProgress(Math.round((e.loaded * 100) / e.total));
+                                        },
+                                        signal
+                                    })
+                                }
+                                checkExistsApi={() => Promise.resolve({ data: { exists: false } })}
+                            />
                             <button onClick={() => setShowMembers(!showMembers)} className={`btn ${showMembers ? "btn-primary" : "btn-secondary"}`}>
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -399,25 +370,7 @@ export default function SharedDriveView() {
                         </div>
                     </div>
 
-                    {/* Upload Progress Bar */}
-                    {uploading && (
-                        <div className="mb-4 animate-fadeIn">
-                            <div className="card p-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="spinner"></div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between text-sm mb-2">
-                                            <span className="font-medium text-[var(--text-primary)]">Uploading...</span>
-                                            <span className="text-[var(--accent)]">{uploadProgress}%</span>
-                                        </div>
-                                        <div className="progress-bar">
-                                            <div className="progress-bar-fill" style={{ width: `${uploadProgress}%` }}></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+
 
                     {/* Files Grid */}
                     {loading ? (

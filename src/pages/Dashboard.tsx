@@ -15,6 +15,7 @@ import { FolderIcon } from "../components/FileIcon";
 import FileThumbnail from "../components/FileThumbnail";
 import { getNotesApi, logAccessApi, toggleStarredApi } from "../api/shared";
 import soundService from "../services/soundService";
+import Button from "../components/ui/Button";
 
 interface ContextMenuState {
   x: number;
@@ -307,208 +308,201 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold text-[var(--text-primary)]">My Drive</h1>
             {path !== "/" && (
-              <button onClick={goBack} className="btn btn-secondary text-sm">
+              <Button onClick={goBack} variant="secondary" className="text-sm">
                 ← Back
-              </button>
+              </Button>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowCreateFolder(true)}
-              className="btn btn-secondary"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              </svg>
-              New Folder
-            </button>
-            <UploadModal path={path} onUploaded={refresh} />
-          </div>
+          <UploadModal
+            path={path}
+            onUploaded={refresh}
+            onCreateFolder={() => setShowCreateFolder(true)}
+          />
         </div>
-
-        <Breadcrumb path={path} onNavigate={setPath} />
-
-        {loading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full"></div>
-          </div>
-        )}
-
-        {error && <p className="text-[var(--danger)]">{error}</p>}
-
-        {!loading && folders.length === 0 && files.length === 0 && (
-          <div
-            className="card text-center py-16 mt-4"
-            onContextMenu={(e) => handleContextMenu(e, "empty")}
-          >
-            <div className="w-20 h-20 mx-auto mb-4">
-              <FolderIcon size="lg" />
-            </div>
-            <p className="text-lg text-[var(--text-secondary)] mb-2">This folder is empty</p>
-            <p className="text-sm text-[var(--text-muted)]">Drop files here or use the Upload button</p>
-          </div>
-        )}
-
-        {/* Files Grid */}
-        <div
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6"
-          onContextMenu={(e) => { if (e.target === e.currentTarget) handleContextMenu(e, "empty"); }}
-        >
-          {folders.map((folder) => {
-            const latestNote = getLatestNote("folder", folder._id);
-            const isDragOver = dragOverFolder === folder._id;
-            return (
-              <div
-                key={folder._id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, "folder", folder)}
-                onDragOver={(e) => handleDragOver(e, folder._id)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, folder)}
-                onContextMenu={(e) => handleContextMenu(e, "folder", folder)}
-                onClick={() => setPath(path === "/" ? `/${folder.name}` : `${path}/${folder.name}`)}
-                className={`file-card group ${isDragOver ? "ring-2 ring-[var(--accent)] bg-[var(--accent-light)]" : ""
-                  }`}
-              >
-                {/* Sticky Note Preview */}
-                {latestNote && (
-                  <div className={`sticky-note-preview sticky-note-${latestNote.color}`}>
-                    {latestNote.content.length > 25
-                      ? latestNote.content.substring(0, 25) + "..."
-                      : latestNote.content}
-                  </div>
-                )}
-                <div className="flex justify-center mb-3 group-hover:scale-110 transition-transform">
-                  <FolderIcon />
-                </div>
-                <p className="font-medium truncate text-sm text-[var(--text-primary)] text-center">{folder.name}</p>
-                <p className="text-xs text-[var(--text-muted)] text-center">Folder</p>
-              </div>
-            );
-          })}
-
-          {files.map((file) => {
-            const latestNote = getLatestNote("file", file._id);
-            return (
-              <div
-                key={file._id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, "file", file)}
-                onContextMenu={(e) => handleContextMenu(e, "file", file)}
-                onClick={() => handlePreview(file)}
-                className="file-card group"
-              >
-                {/* Sticky Note Preview */}
-                {latestNote && (
-                  <div className={`sticky-note-preview sticky-note-${latestNote.color}`}>
-                    {latestNote.content.length > 25
-                      ? latestNote.content.substring(0, 25) + "..."
-                      : latestNote.content}
-                  </div>
-                )}
-                <div className="flex justify-center mb-3 group-hover:scale-110 transition-transform">
-                  <FileThumbnail fileId={file._id} fileName={file.fileName} mimeType={file.mimeType} />
-                </div>
-                <p className="font-medium truncate text-sm text-[var(--text-primary)] text-center" title={file.fileName}>{file.fileName}</p>
-                <p className="text-xs text-[var(--text-muted)] text-center">
-                  {formatSize(file.size)}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Context Menu */}
-        {contextMenu && (
-          <ContextMenu
-            x={contextMenu.x}
-            y={contextMenu.y}
-            items={getContextMenuItems()}
-            onClose={closeContextMenu}
-          />
-        )}
-
-        {/* Create Folder Modal */}
-        {showCreateFolder && (
-          <div className="modal-overlay" onClick={() => setShowCreateFolder(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2 className="font-semibold text-lg text-[var(--text-primary)] mb-4">Create New Folder</h2>
-              <input
-                type="text"
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder="Folder name"
-                className="input mb-4"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateFolder();
-                  if (e.key === "Escape") setShowCreateFolder(false);
-                }}
-              />
-              <div className="flex justify-end gap-2">
-                <button onClick={() => { setShowCreateFolder(false); setNewFolderName(""); }} className="btn btn-secondary">
-                  Cancel
-                </button>
-                <button onClick={handleCreateFolder} disabled={creating || !newFolderName.trim()} className="btn btn-primary">
-                  {creating ? "Creating..." : "Create"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Properties Panel */}
-        {propertiesItem && (
-          <PropertiesPanel
-            item={propertiesItem}
-            type={propertiesType}
-            onClose={() => setPropertiesItem(null)}
-          />
-        )}
-
-        {/* Share Modal */}
-        {shareItem && (
-          <ShareModal
-            resourceType={shareItem.type}
-            resourceId={shareItem.id}
-            resourceName={shareItem.name}
-            onClose={() => setShareItem(null)}
-          />
-        )}
-
-        {/* Move to Shared Drive Modal */}
-        {moveItem && (
-          <MoveToSharedDrive
-            resourceType={moveItem.type}
-            resourceId={moveItem.id}
-            resourceName={moveItem.name}
-            onClose={() => setMoveItem(null)}
-            onMoved={() => loadData(path)}
-          />
-        )}
-
-        {/* Sticky Notes Panel */}
-        {notesItem && (
-          <StickyNotePanel
-            resourceType={notesItem.type}
-            resourceId={notesItem.id}
-            onClose={() => { setNotesItem(null); refresh(); }}
-          />
-        )}
-
-        {/* Move to Folder Modal */}
-        {moveToFolderItem && (
-          <MoveModal
-            type={moveToFolderItem.type}
-            itemId={moveToFolderItem.id}
-            itemName={moveToFolderItem.name}
-            currentPath={path}
-            onClose={() => setMoveToFolderItem(null)}
-            onMoved={() => { refresh(); soundService.playSuccess(); }}
-          />
-        )}
       </div>
+
+      <Breadcrumb path={path} onNavigate={setPath} />
+
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full"></div>
+        </div>
+      )}
+
+      {error && <p className="text-[var(--danger)]">{error}</p>}
+
+      {!loading && folders.length === 0 && files.length === 0 && (
+        <div
+          className="card text-center py-16 mt-4"
+          onContextMenu={(e) => handleContextMenu(e, "empty")}
+        >
+          <div className="w-20 h-20 mx-auto mb-4">
+            <FolderIcon size="lg" />
+          </div>
+          <p className="text-lg text-[var(--text-secondary)] mb-2">This folder is empty</p>
+          <p className="text-sm text-[var(--text-muted)]">Drop files here or use the Upload button</p>
+        </div>
+      )}
+
+      {/* Files Grid */}
+      <div
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6"
+        onContextMenu={(e) => { if (e.target === e.currentTarget) handleContextMenu(e, "empty"); }}
+      >
+        {folders.map((folder) => {
+          const latestNote = getLatestNote("folder", folder._id);
+          const isDragOver = dragOverFolder === folder._id;
+          return (
+            <div
+              key={folder._id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, "folder", folder)}
+              onDragOver={(e) => handleDragOver(e, folder._id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, folder)}
+              onContextMenu={(e) => handleContextMenu(e, "folder", folder)}
+              onClick={() => setPath(path === "/" ? `/${folder.name}` : `${path}/${folder.name}`)}
+              className={`file-card group ${isDragOver ? "ring-2 ring-[var(--accent)] bg-[var(--accent-light)]" : ""
+                }`}
+            >
+              {/* Sticky Note Preview */}
+              {latestNote && (
+                <div className={`sticky-note-preview sticky-note-${latestNote.color}`}>
+                  {latestNote.content.length > 25
+                    ? latestNote.content.substring(0, 25) + "..."
+                    : latestNote.content}
+                </div>
+              )}
+              <div className="flex justify-center mb-3 group-hover:scale-110 transition-transform">
+                <FolderIcon />
+              </div>
+              <p className="font-medium truncate text-sm text-[var(--text-primary)] text-center">{folder.name}</p>
+              <p className="text-xs text-[var(--text-muted)] text-center">Folder</p>
+            </div>
+          );
+        })}
+
+        {files.map((file) => {
+          const latestNote = getLatestNote("file", file._id);
+          return (
+            <div
+              key={file._id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, "file", file)}
+              onContextMenu={(e) => handleContextMenu(e, "file", file)}
+              onClick={() => handlePreview(file)}
+              className="file-card group"
+            >
+              {/* Sticky Note Preview */}
+              {latestNote && (
+                <div className={`sticky-note-preview sticky-note-${latestNote.color}`}>
+                  {latestNote.content.length > 25
+                    ? latestNote.content.substring(0, 25) + "..."
+                    : latestNote.content}
+                </div>
+              )}
+              <div className="flex justify-center mb-3 group-hover:scale-110 transition-transform">
+                <FileThumbnail fileId={file._id} fileName={file.fileName} mimeType={file.mimeType} />
+              </div>
+              <p className="font-medium truncate text-sm text-[var(--text-primary)] text-center" title={file.fileName}>{file.fileName}</p>
+              <p className="text-xs text-[var(--text-muted)] text-center">
+                {formatSize(file.size)}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={getContextMenuItems()}
+          onClose={closeContextMenu}
+        />
+      )}
+
+      {/* Create Folder Modal */}
+      {showCreateFolder && (
+        <div className="modal-overlay" onClick={() => setShowCreateFolder(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 className="font-semibold text-lg text-[var(--text-primary)] mb-4">Create New Folder</h2>
+            <input
+              type="text"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="Folder name"
+              className="input mb-4"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreateFolder();
+                if (e.key === "Escape") setShowCreateFolder(false);
+              }}
+            />
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => { setShowCreateFolder(false); setNewFolderName(""); }} variant="secondary">
+                Cancel
+              </Button>
+              <Button onClick={handleCreateFolder} disabled={creating || !newFolderName.trim()} variant="primary">
+                {creating ? "Creating..." : "Create"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Properties Panel */}
+      {propertiesItem && (
+        <PropertiesPanel
+          item={propertiesItem}
+          type={propertiesType}
+          onClose={() => setPropertiesItem(null)}
+        />
+      )}
+
+      {/* Share Modal */}
+      {shareItem && (
+        <ShareModal
+          resourceType={shareItem.type}
+          resourceId={shareItem.id}
+          resourceName={shareItem.name}
+          onClose={() => setShareItem(null)}
+        />
+      )}
+
+      {/* Move to Shared Drive Modal */}
+      {moveItem && (
+        <MoveToSharedDrive
+          resourceType={moveItem.type}
+          resourceId={moveItem.id}
+          resourceName={moveItem.name}
+          onClose={() => setMoveItem(null)}
+          onMoved={() => loadData(path)}
+        />
+      )}
+
+      {/* Sticky Notes Panel */}
+      {notesItem && (
+        <StickyNotePanel
+          resourceType={notesItem.type}
+          resourceId={notesItem.id}
+          onClose={() => { setNotesItem(null); refresh(); }}
+        />
+      )}
+
+      {/* Move to Folder Modal */}
+      {moveToFolderItem && (
+        <MoveModal
+          type={moveToFolderItem.type}
+          itemId={moveToFolderItem.id}
+          itemName={moveToFolderItem.name}
+          currentPath={path}
+          onClose={() => setMoveToFolderItem(null)}
+          onMoved={() => { refresh(); soundService.playSuccess(); }}
+        />
+      )}
     </Layout>
   );
 }

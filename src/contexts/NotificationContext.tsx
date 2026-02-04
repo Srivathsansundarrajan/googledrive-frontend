@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from "react";
 import api from "../api/axios";
 import soundService from "../services/soundService";
+import socketService from "../services/socketService";
+
 
 interface Notification {
     _id: string; // Changed from id to _id to match MongoDB
@@ -55,10 +57,37 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         fetchNotifications();
-        // Poll every minute
-        const interval = setInterval(fetchNotifications, 60000);
-        return () => clearInterval(interval);
+
+        // Connect socket
+        socketService.connect();
+
+        // Get user ID from token to register socket
+        const token = localStorage.getItem("token");
+        if (token) {
+            try {
+                // Decode token payload (base64url)
+                const payload = JSON.parse(atob(token.split(".")[1]));
+                const userId = payload.userId || payload.id || payload._id;
+                if (userId) {
+                    socketService.register(userId);
+                }
+            } catch (e) {
+                console.error("Failed to decode token for socket registration", e);
+            }
+        }
+
+        // Listen for new notifications
+        socketService.on("new_notification", (newNotification: Notification) => {
+            soundService.playNotification();
+            setNotifications(prev => [newNotification, ...prev]);
+        });
+
+        return () => {
+            socketService.off("new_notification");
+            socketService.disconnect();
+        };
     }, []);
+
 
     const markAsRead = async (id: string) => {
         try {
