@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import Layout from "../components/Layout";
-import { getSharedFolderContentsApi, accessByTokenApi } from "../api/shared";
+import { getSharedFolderContentsApi } from "../api/shared";
 import FileThumbnail from "../components/FileThumbnail";
 import { FolderIcon } from "../components/FileIcon";
-import ContextMenu, { ContextMenuItem } from "../components/ContextMenu";
+import ContextMenu from "../components/ContextMenu";
 
 interface FileItem {
     _id: string;
@@ -35,7 +35,7 @@ export default function SharedFolder() {
     const [folders, setFolders] = useState<FolderItem[]>([]);
     const [files, setFiles] = useState<FileItem[]>([]);
     const [rootName, setRootName] = useState("");
-    const [permission, setPermission] = useState("view");
+
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
     useEffect(() => {
@@ -53,7 +53,7 @@ export default function SharedFolder() {
             setFolders(res.data.folders);
             setFiles(res.data.files);
             setRootName(res.data.rootFolderName);
-            setPermission(res.data.share.permission);
+
         } catch (err: any) {
             setError(err.response?.data?.message || "Failed to load folder");
         } finally {
@@ -74,24 +74,7 @@ export default function SharedFolder() {
         setSearchParams({ path: newPath });
     };
 
-    const handleDownload = async (file: FileItem) => {
-        if (permission !== "download" && permission !== "edit") {
-            alert("Download not allowed");
-            return;
-        }
-        // We need to get a fresh token for this specific file if it's inside the folder
-        // For simplicity, we might reuse `accessByTokenApi` if we had a token for the file
-        // BUT since we are inside a folder, we might not have a direct share token for the file.
-        // The current backend simplistic structure requires a token for public access.
-        // However, `getSharedFolderContents` returns files.
-        // We need an endpoint to download a file *given the folder share token* and file ID.
-        // Wait, `accessByToken` works for the *share* object.
 
-        // WORKAROUND: For now, alert that individual file download inside shared folders 
-        // requires logic we might need to add: "Download file via parent folder token"
-        // Let's implement a quick fix in the frontend to tell user.
-        alert("To download files inside a shared folder, please request individual file access or wait for the 'Download Folder' feature.");
-    };
 
     // NOTE: For a real implementation, we'd need an endpoint like /share/folder/:token/download/:fileId
     // which verifies the token allows access to the folder, and the file is inside it.

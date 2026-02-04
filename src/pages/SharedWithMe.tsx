@@ -12,7 +12,11 @@ interface ShareItem {
     resourceType: string;
     resourceId: string;
     permission: string;
-    sharedBy: string;
+    sharedBy: string | {
+        email: string;
+        firstName?: string;
+        lastName?: string;
+    };
     createdAt: string;
     accessToken: string;
     resource: {

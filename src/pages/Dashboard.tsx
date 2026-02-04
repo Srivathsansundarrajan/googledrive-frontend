@@ -13,7 +13,7 @@ import MoveModal from "../components/MoveModal";
 import StickyNotePanel from "../components/StickyNotePanel";
 import { FolderIcon } from "../components/FileIcon";
 import FileThumbnail from "../components/FileThumbnail";
-import { getNotesApi, logAccessApi, toggleStarredApi } from "../api/shared";
+import { logAccessApi, toggleStarredApi } from "../api/shared";
 import soundService from "../services/soundService";
 import Button from "../components/ui/Button";
 
