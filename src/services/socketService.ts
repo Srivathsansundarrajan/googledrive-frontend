@@ -1,13 +1,14 @@
 import { io, Socket } from "socket.io-client";
 
-const URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const SERVER_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 class SocketService {
     private socket: Socket;
 
     constructor() {
         // Strip path from URL to avoid namespace issues (e.g. /api)
-        const urlObj = new URL(URL);
+        // Using global URL class, passing SERVER_URL string
+        const urlObj = new URL(SERVER_URL);
         const baseUrl = urlObj.origin;
 
         this.socket = io(baseUrl, {
