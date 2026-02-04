@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getNotesApi, addNoteApi, deleteNoteApi } from "../api/shared";
 import soundService from "../services/soundService";
+import socketService from "../services/socketService";
 
 interface Note {
     _id: string;
@@ -32,7 +33,29 @@ export default function StickyNotePanel({ resourceType, resourceId, onClose }: P
 
     useEffect(() => {
         loadNotes();
-    }, []);
+
+        const handleNewNote = (note: Note & { resourceId: string }) => {
+            // Only add if it belongs to this resource
+            // The note object from backend has resourceId
+            if (note.resourceId === resourceId) {
+                setNotes(prev => [note, ...prev]);
+                soundService.playNotification();
+            }
+        };
+
+        const handleDeleteNote = (noteId: string) => {
+            setNotes(prev => prev.filter(n => n._id !== noteId));
+        };
+
+        socketService.on("new_note", handleNewNote);
+        socketService.on("delete_note", handleDeleteNote);
+
+        return () => {
+            socketService.off("new_note");
+            socketService.off("delete_note");
+            // We don't disconnect here because SharedDriveView manages the connection/room
+        };
+    }, [resourceId]);
 
     const loadNotes = async () => {
         try {
