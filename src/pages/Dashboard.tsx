@@ -439,96 +439,97 @@ export default function Dashboard() {
             );
           })}
         </div>
+      </div>
 
-        {/* Context Menu */}
-        {contextMenu && (
-          <ContextMenu
-            x={contextMenu.x}
-            y={contextMenu.y}
-            items={getContextMenuItems()}
-            onClose={closeContextMenu}
-          />
-        )}
+      {/* Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={getContextMenuItems()}
+          onClose={closeContextMenu}
+        />
+      )}
 
-        {/* Create Folder Modal */}
-        {showCreateFolder && (
-          <div className="modal-overlay" onClick={() => setShowCreateFolder(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <h2 className="font-semibold text-lg text-[var(--text-primary)] mb-4">Create New Folder</h2>
-              <input
-                type="text"
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder="Folder name"
-                className="input mb-4"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateFolder();
-                  if (e.key === "Escape") setShowCreateFolder(false);
-                }}
-              />
-              <div className="flex justify-end gap-2">
-                <Button onClick={() => { setShowCreateFolder(false); setNewFolderName(""); }} variant="secondary">
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateFolder} disabled={creating || !newFolderName.trim()} variant="primary">
-                  {creating ? "Creating..." : "Create"}
-                </Button>
-              </div>
+      {/* Create Folder Modal */}
+      {showCreateFolder && (
+        <div className="modal-overlay" onClick={() => setShowCreateFolder(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 className="font-semibold text-lg text-[var(--text-primary)] mb-4">Create New Folder</h2>
+            <input
+              type="text"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              placeholder="Folder name"
+              className="input mb-4"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreateFolder();
+                if (e.key === "Escape") setShowCreateFolder(false);
+              }}
+            />
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => { setShowCreateFolder(false); setNewFolderName(""); }} variant="secondary">
+                Cancel
+              </Button>
+              <Button onClick={handleCreateFolder} disabled={creating || !newFolderName.trim()} variant="primary">
+                {creating ? "Creating..." : "Create"}
+              </Button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Properties Panel */}
-        {propertiesItem && (
-          <PropertiesPanel
-            item={propertiesItem}
-            type={propertiesType}
-            onClose={() => setPropertiesItem(null)}
-          />
-        )}
+      {/* Properties Panel */}
+      {propertiesItem && (
+        <PropertiesPanel
+          item={propertiesItem}
+          type={propertiesType}
+          onClose={() => setPropertiesItem(null)}
+        />
+      )}
 
-        {/* Share Modal */}
-        {shareItem && (
-          <ShareModal
-            resourceType={shareItem.type}
-            resourceId={shareItem.id}
-            resourceName={shareItem.name}
-            onClose={() => setShareItem(null)}
-          />
-        )}
+      {/* Share Modal */}
+      {shareItem && (
+        <ShareModal
+          resourceType={shareItem.type}
+          resourceId={shareItem.id}
+          resourceName={shareItem.name}
+          onClose={() => setShareItem(null)}
+        />
+      )}
 
-        {/* Move to Shared Drive Modal */}
-        {moveItem && (
-          <MoveToSharedDrive
-            resourceType={moveItem.type}
-            resourceId={moveItem.id}
-            resourceName={moveItem.name}
-            onClose={() => setMoveItem(null)}
-            onMoved={() => loadData(path)}
-          />
-        )}
+      {/* Move to Shared Drive Modal */}
+      {moveItem && (
+        <MoveToSharedDrive
+          resourceType={moveItem.type}
+          resourceId={moveItem.id}
+          resourceName={moveItem.name}
+          onClose={() => setMoveItem(null)}
+          onMoved={() => loadData(path)}
+        />
+      )}
 
-        {/* Sticky Notes Panel */}
-        {notesItem && (
-          <StickyNotePanel
-            resourceType={notesItem.type}
-            resourceId={notesItem.id}
-            onClose={() => { setNotesItem(null); refresh(); }}
-          />
-        )}
+      {/* Sticky Notes Panel */}
+      {notesItem && (
+        <StickyNotePanel
+          resourceType={notesItem.type}
+          resourceId={notesItem.id}
+          onClose={() => { setNotesItem(null); refresh(); }}
+        />
+      )}
 
-        {/* Move to Folder Modal */}
-        {moveToFolderItem && (
-          <MoveModal
-            type={moveToFolderItem.type}
-            itemId={moveToFolderItem.id}
-            itemName={moveToFolderItem.name}
-            currentPath={path}
-            onClose={() => setMoveToFolderItem(null)}
-            onMoved={() => { refresh(); soundService.playSuccess(); }}
-          />
-        )}
+      {/* Move to Folder Modal */}
+      {moveToFolderItem && (
+        <MoveModal
+          type={moveToFolderItem.type}
+          itemId={moveToFolderItem.id}
+          itemName={moveToFolderItem.name}
+          currentPath={path}
+          onClose={() => setMoveToFolderItem(null)}
+          onMoved={() => { refresh(); soundService.playSuccess(); }}
+        />
+      )}
     </Layout>
   );
 }
