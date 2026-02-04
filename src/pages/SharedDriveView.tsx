@@ -264,7 +264,8 @@ export default function SharedDriveView() {
 
     const handleDownloadFolder = async (folder: FolderItem) => {
         try {
-            const downloadUrl = `${api.defaults.baseURL}/shared-drives/${id}/folders/${folder._id}/download`;
+            const token = localStorage.getItem("token");
+            const downloadUrl = `${api.defaults.baseURL}/shared-drives/${id}/folders/${folder._id}/download?token=${token}`;
             window.open(downloadUrl, "_blank");
         } catch (err) {
             console.error("Download folder error:", err);

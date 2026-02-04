@@ -198,7 +198,8 @@ export default function Dashboard() {
   const handleDownloadFolder = (folder: FolderItem) => {
     try {
       // Direct download link for folder zip
-      const downloadUrl = `${api.defaults.baseURL}/folders/${folder._id}/download`;
+      const token = localStorage.getItem("token");
+      const downloadUrl = `${api.defaults.baseURL}/folders/${folder._id}/download?token=${token}`;
       // Open in new tab/trigger download
       window.open(downloadUrl, "_blank");
     } catch (err) {

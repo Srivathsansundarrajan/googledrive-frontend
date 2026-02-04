@@ -10,6 +10,18 @@ class SocketService {
             autoConnect: false,
             withCredentials: true
         });
+
+        this.socket.on("connect", () => {
+            console.log("Socket connected:", this.socket.id);
+        });
+
+        this.socket.on("connect_error", (err) => {
+            console.error("Socket connection error:", err);
+        });
+
+        this.socket.on("disconnect", (reason) => {
+            console.log("Socket disconnected:", reason);
+        });
     }
 
     connect() {

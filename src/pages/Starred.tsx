@@ -50,7 +50,8 @@ export default function Starred() {
 
     const handleDownloadFolder = (folder: FolderItem) => {
         try {
-            const downloadUrl = `${api.defaults.baseURL}/folders/${folder._id}/download`;
+            const token = localStorage.getItem("token");
+            const downloadUrl = `${api.defaults.baseURL}/folders/${folder._id}/download?token=${token}`;
             window.open(downloadUrl, "_blank");
         } catch (err) {
             console.error("Download folder error:", err);
