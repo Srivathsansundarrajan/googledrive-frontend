@@ -53,6 +53,12 @@ export const getSharedFolderContentsApi = (token: string, path: string = "/") =>
 export const removeShareApi = (id: string) =>
     api.delete(`/share/${id}`);
 
+export const getResourceSharesApi = (resourceId: string) =>
+    api.get(`/share/resource/${resourceId}`);
+
+export const updateSharePermissionApi = (id: string, permission: string) =>
+    api.put(`/share/${id}`, { permission });
+
 // Chat
 export const getChatMessagesApi = (driveId: string, limit: number = 50) =>
     api.get(`/chat/drive/${driveId}?limit=${limit}`);
