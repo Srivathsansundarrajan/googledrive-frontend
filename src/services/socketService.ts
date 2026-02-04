@@ -35,6 +35,14 @@ class SocketService {
     off(event: string) {
         this.socket.off(event);
     }
+
+    joinDrive(driveId: string) {
+        this.socket.emit("join_drive", driveId);
+    }
+
+    leaveDrive(driveId: string) {
+        this.socket.emit("leave_drive", driveId);
+    }
 }
 
 export default new SocketService();

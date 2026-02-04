@@ -111,12 +111,10 @@ export default function Layout({ children }: LayoutProps) {
         setShowResults(false);
         setSearchQuery("");
         if (result.path) {
-            // Navigate to dashboard with path
             navigate(`/dashboard?path=${encodeURIComponent(result.path)}`);
         } else {
             navigate("/dashboard");
         }
-        window.location.reload();
     };
 
     const handleNotificationClick = async (notification: any) => {

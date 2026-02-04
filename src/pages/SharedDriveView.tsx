@@ -18,6 +18,7 @@ import {
     getNotesApi
 } from "../api/shared";
 import api from "../api/axios";
+import socketService from "../services/socketService";
 
 interface SharedDrive {
     _id: string;
@@ -153,6 +154,9 @@ export default function SharedDriveView() {
         }
     };
 
+    // Chat
+    const [unreadCount, setUnreadCount] = useState(0);
+
     const loadChat = async () => {
         if (!id) return;
         try {
@@ -167,6 +171,37 @@ export default function SharedDriveView() {
     useEffect(() => { loadDrive(); }, [id]);
     useEffect(() => { loadContents(); }, [id, path]);
     useEffect(() => { if (showChat) loadChat(); }, [showChat]);
+
+    // Socket connection for real-time chat
+    useEffect(() => {
+        if (!id) return;
+
+        socketService.connect();
+        socketService.joinDrive(id);
+
+        const handleNewMessage = (msg: ChatMessage) => {
+            // Only add if it's from another user, or if we want to ensure consistency (usually sender adds optimistically or waits for ack)
+            // Assuming msg includes all fields
+            setMessages(prev => [...prev, msg]);
+
+            if (showChat) {
+                setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+            } else {
+                setUnreadCount(prev => prev + 1);
+                // Optionally play sound
+                // soundService.playNotification(); 
+            }
+        };
+
+
+
+        socketService.on("receive_message", handleNewMessage);
+
+        return () => {
+            socketService.off("receive_message"); // Note: off() in service usually removes all listeners for event, or we need to pass handler if supported
+            socketService.leaveDrive(id);
+        };
+    }, [id, showChat]); // Re-bind listener if showChat changes to know whether to increment unread
 
     const handleContextMenu = (e: React.MouseEvent, type: "empty" | "file" | "folder", target?: FileItem | FolderItem) => {
         e.preventDefault();
@@ -361,11 +396,16 @@ export default function SharedDriveView() {
                                 </svg>
                                 {drive?.members.length || 0}
                             </button>
-                            <button onClick={() => setShowChat(!showChat)} className={`btn ${showChat ? "btn-primary" : "btn-secondary"}`}>
+                            <button onClick={() => { setShowChat(!showChat); if (!showChat) setUnreadCount(0); }} className={`btn ${showChat ? "btn-primary" : "btn-secondary"} relative`}>
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                 </svg>
                                 Chat
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-[var(--bg-primary)]">
+                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                    </span>
+                                )}
                             </button>
                         </div>
                     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getNotesApi, addNoteApi, deleteNoteApi} from "../api/shared";
+import { getNotesApi, addNoteApi, deleteNoteApi } from "../api/shared";
 import soundService from "../services/soundService";
 
 interface Note {
@@ -16,11 +16,11 @@ interface Props {
 }
 
 const COLORS = [
-    { name: "yellow", bg: "bg-yellow-100", border: "border-yellow-300" },
-    { name: "blue", bg: "bg-blue-100", border: "border-blue-300" },
-    { name: "green", bg: "bg-green-100", border: "border-green-300" },
-    { name: "pink", bg: "bg-pink-100", border: "border-pink-300" },
-    { name: "purple", bg: "bg-purple-100", border: "border-purple-300" },
+    { name: "yellow", bg: "bg-yellow-100 dark:bg-yellow-200", border: "border-yellow-300 dark:border-yellow-400" },
+    { name: "blue", bg: "bg-blue-100 dark:bg-blue-200", border: "border-blue-300 dark:border-blue-400" },
+    { name: "green", bg: "bg-green-100 dark:bg-green-200", border: "border-green-300 dark:border-green-400" },
+    { name: "pink", bg: "bg-pink-100 dark:bg-pink-200", border: "border-pink-300 dark:border-pink-400" },
+    { name: "purple", bg: "bg-purple-100 dark:bg-purple-200", border: "border-purple-300 dark:border-purple-400" },
 ];
 
 export default function StickyNotePanel({ resourceType, resourceId, onClose }: Props) {
@@ -95,7 +95,7 @@ export default function StickyNotePanel({ resourceType, resourceId, onClose }: P
                             const colors = getColorClasses(note.color);
                             return (
                                 <div key={note._id} className={`p-3 rounded-lg border-2 ${colors.bg} ${colors.border}`}>
-                                    <p className="text-sm whitespace-pre-wrap text-gray-800 dark:text-gray-900">{note.content}</p>
+                                    <p className="text-sm whitespace-pre-wrap text-gray-900">{note.content}</p>
                                     <div className="flex justify-between items-center mt-2 text-xs text-gray-600 dark:text-gray-700">
                                         <span>{new Date(note.createdAt).toLocaleDateString()}</span>
                                         <button onClick={() => handleDelete(note._id)} className="text-red-500 hover:underline">Delete</button>

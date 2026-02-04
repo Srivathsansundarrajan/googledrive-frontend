@@ -38,8 +38,26 @@ const formatSize = (bytes?: number): string => {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 };
 
+import { useSearchParams } from "react-router-dom";
+
 export default function Dashboard() {
-  const [path, setPath] = useState("/");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialPath = searchParams.get("path") || "/";
+  const [path, setPath] = useState(initialPath);
+
+  // Sync state with URL if URL changes (e.g. back button)
+  useEffect(() => {
+    const urlPath = searchParams.get("path") || "/";
+    if (urlPath !== path) {
+      setPath(urlPath);
+    }
+  }, [searchParams]);
+
+  const updatePath = (newPath: string) => {
+    setPath(newPath);
+    setSearchParams({ path: newPath });
+  };
+
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -271,9 +289,9 @@ export default function Dashboard() {
       const folder = contextMenu.target as FolderItem;
       const isStarred = (folder as any).isStarred;
       return [
-        { label: "Open", icon: "📂", onClick: () => setPath(path === "/" ? `/${folder.name}` : `${path}/${folder.name}`) },
-        { label: isStarred ? "Unstar" : "Star", icon: isStarred ? "⭐" : "☆", onClick: async () => { await toggleStarredApi("folder", folder._id); refresh(); } },
-        { label: "Move", icon: "📁", onClick: () => setMoveToFolderItem({ type: "folder", id: folder._id, name: folder.name }) },
+        { label: "Open", icon: "📂", onClick: () => updatePath(path === "/" ? `/${folder.name}` : `${path}/${folder.name}`) },
+        { label: isStarred ? "Remove from Favourites" : "Favourites", icon: "⭐", onClick: async () => { await toggleStarredApi("folder", folder._id); refresh(); } },
+        { label: "Move to", icon: "➡️", onClick: () => setMoveToFolderItem({ type: "folder", id: folder._id, name: folder.name }) },
         { label: "Notes", icon: "📝", onClick: () => setNotesItem({ type: "folder", id: folder._id }) },
         { label: "Share", icon: "🔗", onClick: () => setShareItem({ type: "folder", id: folder._id, name: folder.name }) },
         { label: "Move to Shared Drive", icon: "🏢", onClick: () => setMoveItem({ type: "folder", id: folder._id, name: folder.name }) },
@@ -288,8 +306,8 @@ export default function Dashboard() {
       return [
         { label: "Open", icon: "👁️", onClick: () => handlePreview(file) },
         { label: "Download", icon: "⬇️", onClick: () => handleDownload(file) },
-        { label: isStarred ? "Unstar" : "Star", icon: isStarred ? "⭐" : "☆", onClick: async () => { await toggleStarredApi("file", file._id); refresh(); } },
-        { label: "Move", icon: "📁", onClick: () => setMoveToFolderItem({ type: "file", id: file._id, name: file.fileName }) },
+        { label: isStarred ? "Remove from Favourites" : "Favourites", icon: "⭐", onClick: async () => { await toggleStarredApi("file", file._id); refresh(); } },
+        { label: "Move to", icon: "➡️", onClick: () => setMoveToFolderItem({ type: "file", id: file._id, name: file.fileName }) },
         { label: "Notes", icon: "📝", onClick: () => setNotesItem({ type: "file", id: file._id }) },
         { label: "Share", icon: "🔗", onClick: () => setShareItem({ type: "file", id: file._id, name: file.fileName }) },
         { label: "Move to Shared Drive", icon: "🏢", onClick: () => setMoveItem({ type: "file", id: file._id, name: file.fileName }) },
@@ -324,7 +342,8 @@ export default function Dashboard() {
 
       <Breadcrumb path={path} onNavigate={setPath} />
 
-      {loading && (
+      {/* Loading State - Initial or Empty */}
+      {loading && folders.length === 0 && files.length === 0 && (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full"></div>
         </div>
@@ -345,164 +364,171 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Files Grid */}
-      <div
-        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6"
-        onContextMenu={(e) => { if (e.target === e.currentTarget) handleContextMenu(e, "empty"); }}
-      >
-        {folders.map((folder) => {
-          const latestNote = getLatestNote("folder", folder._id);
-          const isDragOver = dragOverFolder === folder._id;
-          return (
-            <div
-              key={folder._id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, "folder", folder)}
-              onDragOver={(e) => handleDragOver(e, folder._id)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, folder)}
-              onContextMenu={(e) => handleContextMenu(e, "folder", folder)}
-              onClick={() => setPath(path === "/" ? `/${folder.name}` : `${path}/${folder.name}`)}
-              className={`file-card group ${isDragOver ? "ring-2 ring-[var(--accent)] bg-[var(--accent-light)]" : ""
-                }`}
-            >
-              {/* Sticky Note Preview */}
-              {latestNote && (
-                <div className={`sticky-note-preview sticky-note-${latestNote.color}`}>
-                  {latestNote.content.length > 25
-                    ? latestNote.content.substring(0, 25) + "..."
-                    : latestNote.content}
+      {/* Files Grid with Loading Overlay */}
+      <div className="relative min-h-[200px]">
+        {loading && (folders.length > 0 || files.length > 0) && (
+          <div className="absolute inset-0 z-10 bg-[var(--bg-primary)]/50 flex items-center justify-center backdrop-blur-sm">
+            <div className="animate-spin w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full"></div>
+          </div>
+        )}
+
+        <div
+          className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mt-6 ${loading ? "opacity-50" : ""}`}
+          onContextMenu={(e) => { if (e.target === e.currentTarget) handleContextMenu(e, "empty"); }}
+        >
+          {folders.map((folder) => {
+            const latestNote = getLatestNote("folder", folder._id);
+            const isDragOver = dragOverFolder === folder._id;
+            return (
+              <div
+                key={folder._id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, "folder", folder)}
+                onDragOver={(e) => handleDragOver(e, folder._id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, folder)}
+                onContextMenu={(e) => handleContextMenu(e, "folder", folder)}
+                onClick={() => updatePath(path === "/" ? `/${folder.name}` : `${path}/${folder.name}`)}
+                className={`file-card group ${isDragOver ? "ring-2 ring-[var(--accent)] bg-[var(--accent-light)]" : ""
+                  }`}
+              >
+                {/* Sticky Note Preview */}
+                {latestNote && (
+                  <div className={`sticky-note-preview sticky-note-${latestNote.color}`}>
+                    {latestNote.content.length > 25
+                      ? latestNote.content.substring(0, 25) + "..."
+                      : latestNote.content}
+                  </div>
+                )}
+                <div className="flex justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <FolderIcon />
                 </div>
-              )}
-              <div className="flex justify-center mb-3 group-hover:scale-110 transition-transform">
-                <FolderIcon />
+                <p className="font-medium truncate text-sm text-[var(--text-primary)] text-center">{folder.name}</p>
+                <p className="text-xs text-[var(--text-muted)] text-center">Folder</p>
               </div>
-              <p className="font-medium truncate text-sm text-[var(--text-primary)] text-center">{folder.name}</p>
-              <p className="text-xs text-[var(--text-muted)] text-center">Folder</p>
-            </div>
-          );
-        })}
+            );
+          })}
 
-        {files.map((file) => {
-          const latestNote = getLatestNote("file", file._id);
-          return (
-            <div
-              key={file._id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, "file", file)}
-              onContextMenu={(e) => handleContextMenu(e, "file", file)}
-              onClick={() => handlePreview(file)}
-              className="file-card group"
-            >
-              {/* Sticky Note Preview */}
-              {latestNote && (
-                <div className={`sticky-note-preview sticky-note-${latestNote.color}`}>
-                  {latestNote.content.length > 25
-                    ? latestNote.content.substring(0, 25) + "..."
-                    : latestNote.content}
+          {files.map((file) => {
+            const latestNote = getLatestNote("file", file._id);
+            return (
+              <div
+                key={file._id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, "file", file)}
+                onContextMenu={(e) => handleContextMenu(e, "file", file)}
+                onClick={() => handlePreview(file)}
+                className="file-card group"
+              >
+                {/* Sticky Note Preview */}
+                {latestNote && (
+                  <div className={`sticky-note-preview sticky-note-${latestNote.color}`}>
+                    {latestNote.content.length > 25
+                      ? latestNote.content.substring(0, 25) + "..."
+                      : latestNote.content}
+                  </div>
+                )}
+                <div className="flex justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <FileThumbnail fileId={file._id} fileName={file.fileName} mimeType={file.mimeType} />
                 </div>
-              )}
-              <div className="flex justify-center mb-3 group-hover:scale-110 transition-transform">
-                <FileThumbnail fileId={file._id} fileName={file.fileName} mimeType={file.mimeType} />
+                <p className="font-medium truncate text-sm text-[var(--text-primary)] text-center" title={file.fileName}>{file.fileName}</p>
+                <p className="text-xs text-[var(--text-muted)] text-center">
+                  {formatSize(file.size)}
+                </p>
               </div>
-              <p className="font-medium truncate text-sm text-[var(--text-primary)] text-center" title={file.fileName}>{file.fileName}</p>
-              <p className="text-xs text-[var(--text-muted)] text-center">
-                {formatSize(file.size)}
-              </p>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      {/* Context Menu */}
-      {contextMenu && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          items={getContextMenuItems()}
-          onClose={closeContextMenu}
-        />
-      )}
+        {/* Context Menu */}
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            items={getContextMenuItems()}
+            onClose={closeContextMenu}
+          />
+        )}
 
-      {/* Create Folder Modal */}
-      {showCreateFolder && (
-        <div className="modal-overlay" onClick={() => setShowCreateFolder(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 className="font-semibold text-lg text-[var(--text-primary)] mb-4">Create New Folder</h2>
-            <input
-              type="text"
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="Folder name"
-              className="input mb-4"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreateFolder();
-                if (e.key === "Escape") setShowCreateFolder(false);
-              }}
-            />
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => { setShowCreateFolder(false); setNewFolderName(""); }} variant="secondary">
-                Cancel
-              </Button>
-              <Button onClick={handleCreateFolder} disabled={creating || !newFolderName.trim()} variant="primary">
-                {creating ? "Creating..." : "Create"}
-              </Button>
+        {/* Create Folder Modal */}
+        {showCreateFolder && (
+          <div className="modal-overlay" onClick={() => setShowCreateFolder(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2 className="font-semibold text-lg text-[var(--text-primary)] mb-4">Create New Folder</h2>
+              <input
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="Folder name"
+                className="input mb-4"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreateFolder();
+                  if (e.key === "Escape") setShowCreateFolder(false);
+                }}
+              />
+              <div className="flex justify-end gap-2">
+                <Button onClick={() => { setShowCreateFolder(false); setNewFolderName(""); }} variant="secondary">
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateFolder} disabled={creating || !newFolderName.trim()} variant="primary">
+                  {creating ? "Creating..." : "Create"}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Properties Panel */}
-      {propertiesItem && (
-        <PropertiesPanel
-          item={propertiesItem}
-          type={propertiesType}
-          onClose={() => setPropertiesItem(null)}
-        />
-      )}
+        {/* Properties Panel */}
+        {propertiesItem && (
+          <PropertiesPanel
+            item={propertiesItem}
+            type={propertiesType}
+            onClose={() => setPropertiesItem(null)}
+          />
+        )}
 
-      {/* Share Modal */}
-      {shareItem && (
-        <ShareModal
-          resourceType={shareItem.type}
-          resourceId={shareItem.id}
-          resourceName={shareItem.name}
-          onClose={() => setShareItem(null)}
-        />
-      )}
+        {/* Share Modal */}
+        {shareItem && (
+          <ShareModal
+            resourceType={shareItem.type}
+            resourceId={shareItem.id}
+            resourceName={shareItem.name}
+            onClose={() => setShareItem(null)}
+          />
+        )}
 
-      {/* Move to Shared Drive Modal */}
-      {moveItem && (
-        <MoveToSharedDrive
-          resourceType={moveItem.type}
-          resourceId={moveItem.id}
-          resourceName={moveItem.name}
-          onClose={() => setMoveItem(null)}
-          onMoved={() => loadData(path)}
-        />
-      )}
+        {/* Move to Shared Drive Modal */}
+        {moveItem && (
+          <MoveToSharedDrive
+            resourceType={moveItem.type}
+            resourceId={moveItem.id}
+            resourceName={moveItem.name}
+            onClose={() => setMoveItem(null)}
+            onMoved={() => loadData(path)}
+          />
+        )}
 
-      {/* Sticky Notes Panel */}
-      {notesItem && (
-        <StickyNotePanel
-          resourceType={notesItem.type}
-          resourceId={notesItem.id}
-          onClose={() => { setNotesItem(null); refresh(); }}
-        />
-      )}
+        {/* Sticky Notes Panel */}
+        {notesItem && (
+          <StickyNotePanel
+            resourceType={notesItem.type}
+            resourceId={notesItem.id}
+            onClose={() => { setNotesItem(null); refresh(); }}
+          />
+        )}
 
-      {/* Move to Folder Modal */}
-      {moveToFolderItem && (
-        <MoveModal
-          type={moveToFolderItem.type}
-          itemId={moveToFolderItem.id}
-          itemName={moveToFolderItem.name}
-          currentPath={path}
-          onClose={() => setMoveToFolderItem(null)}
-          onMoved={() => { refresh(); soundService.playSuccess(); }}
-        />
-      )}
+        {/* Move to Folder Modal */}
+        {moveToFolderItem && (
+          <MoveModal
+            type={moveToFolderItem.type}
+            itemId={moveToFolderItem.id}
+            itemName={moveToFolderItem.name}
+            currentPath={path}
+            onClose={() => setMoveToFolderItem(null)}
+            onMoved={() => { refresh(); soundService.playSuccess(); }}
+          />
+        )}
     </Layout>
   );
 }

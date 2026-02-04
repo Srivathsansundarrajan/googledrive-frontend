@@ -115,17 +115,7 @@ export default function Profile() {
                             </button>
                         </div>
 
-                        {/* Storage Info */}
-                        <div className="py-3">
-                            <div className="flex items-center justify-between mb-2">
-                                <p className="font-medium text-[var(--text-primary)]">Storage Used</p>
-                                <p className="text-sm text-[var(--text-secondary)]">View storage details</p>
-                            </div>
-                            <div className="h-2 bg-[var(--bg-hover)] rounded-full overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-1/4"></div>
-                            </div>
-                            <p className="text-xs text-[var(--text-muted)] mt-1">Storage info shown in sidebar</p>
-                        </div>
+
                     </div>
 
                     {/* Actions */}
