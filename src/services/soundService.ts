@@ -3,7 +3,7 @@
 
 class SoundService {
     private audioContext: AudioContext | null = null;
-    private initialized = false;
+    // private initialized = false; // Removed as part of lazy init refactor
 
     // Initialize audio context on first use
     private getAudioContext(): AudioContext {
@@ -12,17 +12,18 @@ class SoundService {
         }
         // Resume context if suspended (browser autoplay policies)
         if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
+            this.audioContext.resume().catch(() => {
+                // Ignore autoplay policy errors - we'll try again on next user interaction
+                // console.warn("AudioContext resume failed");
+            });
         }
         return this.audioContext;
     }
 
     // Pre-initialize to reduce first-sound latency
     public init() {
-        if (!this.initialized) {
-            this.getAudioContext();
-            this.initialized = true;
-        }
+        // Optional: just create the context
+        this.getAudioContext();
     }
 
     // Play a tone with specified parameters
@@ -34,6 +35,8 @@ class SoundService {
     ) {
         try {
             const ctx = this.getAudioContext();
+            // ... rest of method
+
             const oscillator = ctx.createOscillator();
             const gainNode = ctx.createGain();
 
@@ -163,20 +166,5 @@ class SoundService {
 
 // Export singleton instance
 const soundService = new SoundService();
-
-// Pre-initialize on module load (helps reduce latency)
-if (typeof window !== 'undefined') {
-    // Initialize on first user interaction to comply with browser autoplay policies
-    const initOnInteraction = () => {
-        soundService.init();
-        document.removeEventListener('click', initOnInteraction);
-        document.removeEventListener('keydown', initOnInteraction);
-        document.removeEventListener('touchstart', initOnInteraction);
-    };
-
-    document.addEventListener('click', initOnInteraction, { once: true });
-    document.addEventListener('keydown', initOnInteraction, { once: true });
-    document.addEventListener('touchstart', initOnInteraction, { once: true });
-}
 
 export default soundService;

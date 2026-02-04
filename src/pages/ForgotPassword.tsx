@@ -20,7 +20,9 @@ export default function ForgotPassword() {
       await forgotPasswordApi(email);
       setSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to send reset link");
+      console.error("Forgot Password Error:", err);
+      const backendMsg = err.response?.data?.message || err.response?.data?.error;
+      setError(backendMsg || "Failed to send reset link. Check backend logs.");
     } finally {
       setIsLoading(false);
     }
