@@ -47,6 +47,9 @@ export const getSharedWithMeApi = () =>
 export const accessByTokenApi = (token: string) =>
     api.get(`/share/access/${token}`);
 
+export const getSharedFolderContentsApi = (token: string, path: string = "/") =>
+    api.get(`/share/folder/${token}?path=${encodeURIComponent(path)}`);
+
 export const removeShareApi = (id: string) =>
     api.delete(`/share/${id}`);
 

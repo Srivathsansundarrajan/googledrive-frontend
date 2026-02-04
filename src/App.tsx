@@ -11,6 +11,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SharedWithMe from "./pages/SharedWithMe";
 import SharedDrives from "./pages/SharedDrives";
 import SharedDriveView from "./pages/SharedDriveView";
+import SharedFolder from "./pages/SharedFolder";
 import Recent from "./pages/Recent";
 import Starred from "./pages/Starred";
 import Profile from "./pages/Profile";
@@ -42,6 +43,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <SharedWithMe />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/shared/:token"
+              element={
+                <ProtectedRoute>
+                  <SharedFolder />
                 </ProtectedRoute>
               }
             />

@@ -357,10 +357,10 @@ export default function UploadModal({
                                 style={{ width: `${percent}%` }}
                             />
                         </div>
-                        <span className="text-sm text-blue-700 dark:text-blue-300 font-medium">{percent}%</span>
+                        <span className="text-sm text-blue-900 dark:text-blue-200 font-bold">{percent}%</span>
                         <button
                             onClick={cancelUpload}
-                            className="text-red-500 text-sm hover:underline"
+                            className="text-red-600 dark:text-red-400 text-sm hover:underline font-medium"
                         >
                             Cancel
                         </button>

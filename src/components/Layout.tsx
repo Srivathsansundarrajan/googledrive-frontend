@@ -132,12 +132,17 @@ export default function Layout({ children }: LayoutProps) {
             <Sidebar userEmail={userEmail} />
 
             {/* Main Content */}
-            <main ref={mainRef} className="flex-1 ml-64">
+            <main ref={mainRef} className="flex-1 md:ml-64 transition-all duration-300">
                 {/* Top Bar */}
-                <header className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur-sm border-b border-[var(--border)] px-6 py-4">
+                <header className="sticky top-0 z-10 bg-[var(--bg-primary)]/80 backdrop-blur-sm border-b border-[var(--border)] px-4 md:px-6 py-4">
                     <div className="flex items-center justify-between">
-                        <div className="relative">
-                            <div className="search-bar w-96">
+                        <div className="relative flex items-center gap-4">
+                            {/* Mobile Menu Button - visible only on small screens */}
+                            <div className="md:hidden">
+                                {/* We need a way to toggle sidebar, but for now let's just ensure layout doesn't break */}
+                            </div>
+
+                            <div className="search-bar w-full md:w-96">
                                 <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
