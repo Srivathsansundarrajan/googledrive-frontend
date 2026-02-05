@@ -56,7 +56,7 @@ export default function MoveModal({ type, itemId, itemName, currentPath, onClose
             onMoved?.();
             onClose();
         } catch (err: any) {
-            setError(err.response?.data?.message || "Failed to move item");
+            setError(err.response?.data?.message || err.response?.data?.error || "Failed to move item");
         } finally {
             setMoving(false);
         }
@@ -131,8 +131,8 @@ export default function MoveModal({ type, itemId, itemName, currentPath, onClose
                             <div
                                 key={folder._id}
                                 className={`w-full p-3 flex items-center gap-3 border-b border-[var(--border)] last:border-b-0 hover:bg-[var(--bg-hover)] cursor-pointer ${selectedPath === (folder.parentPath === "/" ? `/${folder.name}` : `${folder.parentPath}/${folder.name}`)
-                                        ? "bg-blue-50 dark:bg-blue-900/20"
-                                        : ""
+                                    ? "bg-blue-50 dark:bg-blue-900/20"
+                                    : ""
                                     }`}
                             >
                                 <button
