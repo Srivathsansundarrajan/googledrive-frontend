@@ -15,7 +15,8 @@ import {
     getChatMessagesApi,
     sendChatMessageApi,
     createFolderInDriveApi,
-    getNotesApi
+    getNotesApi,
+    deleteItemInDriveApi
 } from "../api/shared";
 import api from "../api/axios";
 import socketService from "../services/socketService";
@@ -273,26 +274,72 @@ export default function SharedDriveView() {
         }
     };
 
+    // Current User
+    const [currentUserEmail, setCurrentUserEmail] = useState("");
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split(".")[1]));
+                if (payload.email) {
+                    setCurrentUserEmail(payload.email);
+                }
+            } catch (e) {
+                console.error("Invalid token", e);
+            }
+        }
+    }, []);
+
+    const canDelete = () => {
+        if (!drive || !currentUserEmail) return false;
+        const member = drive.members.find(m => m.email === currentUserEmail);
+        return member && (member.role === "admin" || member.role === "editor");
+    };
+
+    const handleDelete = async (type: "file" | "folder", itemId: string) => {
+        if (!id || !confirm(`Are you sure you want to delete this ${type}? This cannot be undone.`)) return;
+        try {
+            await deleteItemInDriveApi(id, type, itemId);
+            loadContents();
+        } catch (err: any) {
+            alert(err.response?.data?.message || "Failed to delete item");
+        }
+    };
+
     const getContextMenuItems = (): ContextMenuItem[] => {
         if (!contextMenu) return [];
         if (contextMenu.type === "empty") {
-            return [{ label: "New Folder", icon: "📁", onClick: () => setShowCreateFolder(true) }];
+            const menu: ContextMenuItem[] = [];
+            // Only allow create if editor/admin
+            if (canDelete()) {
+                menu.push({ label: "New Folder", icon: "📁", onClick: () => setShowCreateFolder(true) });
+            }
+            return menu;
         }
         if (contextMenu.type === "folder" && contextMenu.target) {
             const folder = contextMenu.target as FolderItem;
-            return [
+            const items: ContextMenuItem[] = [
                 { label: "Open", icon: "📂", onClick: () => setPath(path === "/" ? `/${folder.name}` : `${path}/${folder.name}`) },
                 { label: "Download", icon: "⬇️", onClick: () => handleDownloadFolder(folder) },
                 { label: "Notes", icon: "📝", onClick: () => setNotesItem({ type: "folder", id: folder._id }) },
             ];
+            if (canDelete()) {
+                items.push({ label: "Delete", icon: "🗑️", onClick: () => handleDelete("folder", folder._id) });
+            }
+            return items;
         }
         if (contextMenu.type === "file" && contextMenu.target) {
             const file = contextMenu.target as FileItem;
-            return [
+            const items: ContextMenuItem[] = [
                 { label: "Open", icon: "👁️", onClick: () => handlePreview(file) },
                 { label: "Download", icon: "⬇️", onClick: () => handleDownload(file) },
                 { label: "Notes", icon: "📝", onClick: () => setNotesItem({ type: "file", id: file._id }) },
             ];
+            if (canDelete()) {
+                items.push({ label: "Delete", icon: "🗑️", onClick: () => handleDelete("file", file._id) });
+            }
+            return items;
         }
         return [];
     };

@@ -84,7 +84,8 @@ export default function UploadModal({
 
                 await Promise.all(
                     batch.map((file) => {
-                        const relativePath = (file as any).webkitRelativePath || file.name;
+                        const fileObj = file as any;
+                        const relativePath = fileObj.manualPath || fileObj.webkitRelativePath || file.name;
                         const relativeFolders = relativePath.includes("/")
                             ? relativePath.split("/").slice(0, -1).join("/")
                             : "";
@@ -174,8 +175,10 @@ export default function UploadModal({
     const getFolderNameFromFilesList = (fileList: File[]): string | null => {
         if (fileList.length === 0) return null;
         const firstFile = fileList[0] as any;
-        if (firstFile.webkitRelativePath) {
-            const parts = firstFile.webkitRelativePath.split("/");
+        const relativePath = firstFile.manualPath || firstFile.webkitRelativePath;
+
+        if (relativePath) {
+            const parts = relativePath.split("/");
             if (parts.length > 1) return parts[0];
         }
         if (fileList.length === 1 && fileList[0].name.endsWith(".zip")) {
@@ -220,12 +223,24 @@ export default function UploadModal({
             if (entry.isFile) {
                 return new Promise((resolve) => {
                     entry.file((file: File) => {
-                        // Manually define webkitRelativePath for logic downstream
-                        // Root files won't have a path, just name.
-                        // Files inside folders will have "Folder/File.txt"
-                        Object.defineProperty(file, "webkitRelativePath", {
-                            value: path + file.name
-                        });
+                        // Manually define path for logic downstream
+                        // We use a custom property because webkitRelativePath might be read-only
+                        const fullPath = path + file.name;
+
+                        // Try to set webkitRelativePath for compatibility
+                        try {
+                            Object.defineProperty(file, "webkitRelativePath", {
+                                value: fullPath,
+                                writable: true,
+                                configurable: true
+                            });
+                        } catch (e) {
+                            console.warn("Could not set webkitRelativePath", e);
+                        }
+
+                        // Set custom property as fallback
+                        (file as any).manualPath = fullPath;
+
                         resolve([file]);
                     });
                 });

@@ -25,6 +25,9 @@ export const deleteSharedDriveApi = (id: string) =>
 export const createFolderInDriveApi = (driveId: string, name: string, parentPath: string = "/") =>
     api.post(`/shared-drives/${driveId}/folders`, { name, parentPath });
 
+export const deleteItemInDriveApi = (driveId: string, type: "file" | "folder", itemId: string) =>
+    api.delete(`/shared-drives/${driveId}/items/${type}/${itemId}`);
+
 export const moveToSharedDriveApi = (driveId: string, resourceType: string, resourceId: string, targetPath: string = "/") =>
     api.post(`/shared-drives/${driveId}/move`, { resourceType, resourceId, targetPath });
 
